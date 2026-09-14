@@ -1,0 +1,30 @@
+# Rust
+/target
+Cargo.lock
+
+# Node.js
+node_modules/
+/packages/npm/dist/
+.npm
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+/packages/python/dist/
+/packages/python/.hatch/
+
+# Go
+/packages/go/bin/
+
+# Swift
+/packages/swift/.build/
+
+# Kotlin / Android
+.gradle/
+build/
+/packages/kotlin/sdk/build/
+
+# OS
+.DS_Store
+*.swp

@@ -1,0 +1,37 @@
+name: Regression Test Suite
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Run daily at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  regression-matrix:
+    name: Regression on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Install Python requests
+        run: python -m pip install requests
+      - name: Build Rust CLI
+        run: cargo build --bin usermon
+      - name: Build Node.js SDK
+        run: |
+          cd packages/npm
+          npm install
+          npm run build
+      - name: Run E2E Cross-Platform Regression Harness
+        run: python3 scripts/run_regression_tests.py

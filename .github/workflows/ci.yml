@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Rust Workspace (Core & CLI) ──────────────────────────────────────────────
+  rust:
+    name: Rust (Core & CLI)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build workspace
+        run: cargo build --all
+      - name: Run unit & integration tests
+        run: cargo test --all
+
+  # ── Node.js / TypeScript SDK ────────────────────────────────────────────────
+  node:
+    name: Node.js / TypeScript (${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies & build
+        run: |
+          cd packages/npm
+          npm install
+          npm run build
+      - name: Run unit tests
+        run: |
+          cd packages/npm
+          npm test
+
+  # ── Python SDK ──────────────────────────────────────────────────────────────
+  python:
+    name: Python (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          cd packages/python
+          python -m pip install --upgrade pip
+          pip install requests
+      - name: Run unit tests
+        run: |
+          cd packages/python
+          python -m unittest discover -s tests -v
+
+  # ── Go SDK ──────────────────────────────────────────────────────────────────
+  go:
+    name: Go (${{ matrix.go-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.21.x", "1.22.x"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Build & Test Go SDK
+        run: |
+          cd packages/go
+          go build ./...
+          go test -v ./...
+
+  # ── Swift SDK (iOS / macOS) ─────────────────────────────────────────────────
+  swift:
+    name: Swift (iOS / macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Swift Package tests
+        run: |
+          cd packages/swift
+          swift test
+
+  # ── Full Cross-Platform Regression Tests ────────────────────────────────────
+  regression:
+    name: Cross-Platform Regression Suite
+    needs: [rust, node, python, go]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Install Python requests
+        run: python -m pip install requests
+      - name: Build Rust CLI
+        run: cargo build --bin usermon
+      - name: Build Node.js SDK
+        run: |
+          cd packages/npm
+          npm install
+          npm run build
+      - name: Run End-to-End Regression Harness
+        run: python3 scripts/run_regression_tests.py

@@ -1,0 +1,20 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Docs Assets
+        run: |
+          test -f docs/index.html
+          test -f docs/guides/quickstart.md
+          test -f docs/guides/architecture.md
+          echo "Documentation assets verified successfully!"

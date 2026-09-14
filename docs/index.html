@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usermon SDK Documentation — Real-User & API Observability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            dark: {
+              950: '#090d16',
+              900: '#0f172a',
+              850: '#131e36',
+              800: '#1e293b',
+              700: '#334155',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    pre code { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .tab-active { border-bottom: 2px solid #6366f1; color: #818cf8; }
+  </style>
+</head>
+<body class="bg-dark-950 text-slate-200 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-50 border-b border-slate-800/80 bg-dark-950/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center font-bold text-white shadow-lg shadow-brand-500/20">
+          U
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-lg tracking-tight text-white">Usermon</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-mono">v0.1.0</span>
+        </div>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative max-w-xs w-full hidden md:block">
+        <input id="searchInput" type="text" placeholder="Search documentation... (Press /)" 
+          class="w-full bg-dark-900 border border-slate-800 rounded-lg py-1.5 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-sans">
+        <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <a href="#simulator" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">Interactive Simulator</a>
+        <a href="https://github.com/usermon/usermon-sdk" target="_blank" class="text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 shrink-0 hidden lg:block sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto pr-4 space-y-6 text-sm">
+      <div>
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">Getting Started</h4>
+        <ul class="space-y-1">
+          <li><a href="#overview" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-300 font-medium">Overview</a></li>
+          <li><a href="#architecture" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Architecture</a></li>
+          <li><a href="#quickstarts" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Multi-Language Setup</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">SDK Platforms</h4>
+        <ul class="space-y-1">
+          <li><a href="#sdk-browser" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Browser (React / Vue / Svelte)</a></li>
+          <li><a href="#sdk-node" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Node.js (Express / Next.js)</a></li>
+          <li><a href="#sdk-python" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Python (FastAPI / Django)</a></li>
+          <li><a href="#sdk-go" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Go (Gin / Echo / Chi)</a></li>
+          <li><a href="#sdk-swift" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Swift (iOS / macOS / SwiftUI)</a></li>
+          <li><a href="#sdk-kotlin" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Kotlin (Android / Compose)</a></li>
+          <li><a href="#sdk-cli" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Rust CLI & Terminal Tool</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">Observability Features</h4>
+        <ul class="space-y-1">
+          <li><a href="#concept-rum" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Core Web Vitals & RUM</a></li>
+          <li><a href="#concept-spans" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Distributed API Spans</a></li>
+          <li><a href="#concept-errors" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Exception Fingerprinting</a></li>
+          <li><a href="#concept-logs" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Structured Log Correlation</a></li>
+          <li><a href="#concept-replay" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Session Replay (rrweb)</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">Publishing & CI/CD</h4>
+        <ul class="space-y-1">
+          <li><a href="#publishing" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Registry Publishing</a></li>
+          <li><a href="#github-actions" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">GitHub Actions CI & Testing</a></li>
+          <li><a href="#simulator" class="block px-3 py-1.5 rounded-md hover:bg-slate-900 text-slate-400">Payload Simulator</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 min-w-0 space-y-16">
+
+      <!-- Hero Section -->
+      <section id="overview" class="border-b border-slate-800/80 pb-12">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold mb-4">
+          <span>🚀 Universal Observability Suite</span>
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">Usermon SDK & CLI</h1>
+        <p class="mt-4 text-lg text-slate-300 leading-relaxed max-w-3xl">
+          High-performance, zero-friction telemetry SDKs and command-line tooling for <strong>Web, Node.js, Python, Go, iOS, Android, and terminal pipes</strong>. Native integration with the Usermon ingestion engine.
+        </p>
+
+        <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono text-xs">
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-yellow-400 block font-bold text-sm">npm</span>
+            <span class="text-slate-400">usermon-sdk</span>
+          </div>
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-blue-400 block font-bold text-sm">pip</span>
+            <span class="text-slate-400">usermon-sdk</span>
+          </div>
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-cyan-400 block font-bold text-sm">go get</span>
+            <span class="text-slate-400">usermon-sdk-go</span>
+          </div>
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-orange-400 block font-bold text-sm">cargo</span>
+            <span class="text-slate-400">usermon-cli</span>
+          </div>
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-amber-500 block font-bold text-sm">Swift SPM</span>
+            <span class="text-slate-400">UsermonSDK</span>
+          </div>
+          <div class="p-3 bg-dark-900 border border-slate-800 rounded-lg text-center">
+            <span class="text-purple-400 block font-bold text-sm">Gradle</span>
+            <span class="text-slate-400">dev.usermon</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture Section -->
+      <section id="architecture" class="space-y-6">
+        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <span class="h-6 w-1.5 bg-brand-500 rounded-full"></span>
+          Telemetry Ingestion Architecture
+        </h2>
+        <p class="text-slate-300 leading-relaxed">
+          Usermon uses a batched, micro-chunked telemetry pipeline that guarantees minimal memory footprint and zero main-thread blockage across client browsers, server runtimes, and mobile devices:
+        </p>
+
+        <div class="p-6 bg-dark-900 border border-slate-800 rounded-xl space-y-4">
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-center">
+            <div class="p-4 bg-dark-850 border border-slate-700/60 rounded-lg w-full">
+              <span class="text-indigo-400 font-bold block mb-1">SDK Clients</span>
+              Browser / Mobile / Server / CLI
+            </div>
+            <div class="text-slate-500">── [W3C traceparent] ──▶</div>
+            <div class="p-4 bg-dark-850 border border-slate-700/60 rounded-lg w-full">
+              <span class="text-indigo-400 font-bold block mb-1">HTTP Ingest Endpoint</span>
+              POST /v1/ingest (Convex site)
+            </div>
+            <div class="text-slate-500">── [Batched Mutation] ──▶</div>
+            <div class="p-4 bg-dark-850 border border-slate-700/60 rounded-lg w-full">
+              <span class="text-indigo-400 font-bold block mb-1">Convex Storage & AI</span>
+              Fingerprinting & Rollups
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Multi-Language Quickstarts -->
+      <section id="quickstarts" class="space-y-6">
+        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <span class="h-6 w-1.5 bg-brand-500 rounded-full"></span>
+          Multi-Language Quickstart
+        </h2>
+
+        <!-- Language Tabs -->
+        <div class="bg-dark-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="flex border-b border-slate-800 overflow-x-auto text-sm font-medium px-2" id="langTabs">
+            <button onclick="selectTab('tab-browser')" class="tab-btn px-4 py-3 text-slate-300 hover:text-white tab-active">Browser</button>
+            <button onclick="selectTab('tab-node')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Node.js</button>
+            <button onclick="selectTab('tab-python')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Python</button>
+            <button onclick="selectTab('tab-go')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Go</button>
+            <button onclick="selectTab('tab-swift')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Swift (iOS)</button>
+            <button onclick="selectTab('tab-kotlin')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Kotlin (Android)</button>
+            <button onclick="selectTab('tab-cli')" class="tab-btn px-4 py-3 text-slate-400 hover:text-white">Rust CLI</button>
+          </div>
+
+          <!-- Tab Content: Browser -->
+          <div id="tab-browser" class="tab-pane p-6 space-y-4">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Install via npm</span>
+              <span class="text-brand-400">npm install usermon-sdk</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-indigo-300"><code>import { init, captureException, captureLog } from 'usermon-sdk/browser';
+
+// Initialize at entry point (main.tsx or layout.tsx)
+init({
+  ingestUrl: 'https://xxx.convex.site',
+  ingestKey: 'um_YOUR_PROJECT_KEY',
+  release: '1.0.0',
+  replay: true,            // optional session replay
+  tracesSampleRate: 1.0,   // sample 100% of fetch requests
+});
+
+// Automatic instrumentation:
+// ✓ window.fetch with W3C traceparent correlation
+// ✓ Global uncaught errors & unhandled promise rejections
+// ✓ Web Vitals (LCP, CLS, INP) via PerformanceObserver
+// ✓ Automatic session key in sessionStorage</code></pre>
+          </div>
+
+          <!-- Tab Content: Node.js -->
+          <div id="tab-node" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Install via npm</span>
+              <span class="text-brand-400">npm install usermon-sdk</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-indigo-300"><code>import { init, captureLog, withSpan } from 'usermon-sdk/node';
+
+init({
+  ingestUrl: process.env.USERMON_INGEST_URL!,
+  ingestKey: process.env.USERMON_INGEST_KEY!,
+  release: process.env.npm_package_version,
+});
+
+// Wrap async functions — records duration, status, and catches errors automatically
+const orders = await withSpan('GET', '/api/orders', async () => {
+  return await db.orders.findMany();
+});
+
+captureLog('Server started', 'info', { attrs: { port: 3000 } });</code></pre>
+          </div>
+
+          <!-- Tab Content: Python -->
+          <div id="tab-python" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Install via pip</span>
+              <span class="text-brand-400">pip install usermon-sdk</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-blue-300"><code>import usermon
+
+client = usermon.init(
+    ingest_url="https://xxx.convex.site",
+    ingest_key="um_YOUR_PROJECT_KEY",
+    platform="web",
+    release="1.0.0",
+)
+
+# Capture error with route context
+client.capture_exception("DatabaseTimeout", route="/api/users", level="error")
+
+# Structured log event
+client.capture_log("User registered", level="info", attrs={"user_id": 42})
+
+# Record backend API span
+client.capture_span("POST", "/api/checkout", status=201, duration_ms=138)</code></pre>
+          </div>
+
+          <!-- Tab Content: Go -->
+          <div id="tab-go" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Install via go get</span>
+              <span class="text-brand-400">go get github.com/usermon/usermon-sdk-go</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-cyan-300"><code>package main
+
+import (
+    "context"
+    "github.com/usermon/usermon-sdk-go/usermon"
+)
+
+func main() {
+    client := usermon.New(
+        "https://xxx.convex.site",
+        "um_YOUR_PROJECT_KEY",
+        usermon.WithPlatform(usermon.PlatformWeb),
+        usermon.WithRelease("1.0.0"),
+    )
+    ctx := context.Background()
+
+    client.CaptureException(ctx, "SQL timeout", usermon.ExceptionOpts{
+        Route: usermon.Ptr("/api/users"),
+    })
+
+    client.CaptureSpan(ctx, usermon.SpanOpts{
+        Method: "POST", Route: "/api/orders", Status: 201, DurationMs: 142,
+    })
+}</code></pre>
+          </div>
+
+          <!-- Tab Content: Swift -->
+          <div id="tab-swift" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Swift Package Manager</span>
+              <span class="text-brand-400">https://github.com/usermon/usermon-sdk-swift</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-orange-300"><code>import UsermonSDK
+
+// In AppDelegate or App.swift:
+Usermon.configure(
+    ingestUrl: "https://xxx.convex.site",
+    ingestKey: "um_YOUR_PROJECT_KEY",
+    release: "1.0.0"
+)
+
+// Automatic URLSession span instrumentation:
+let (data, response) = try await URLSession.shared.usermon.data(for: request)
+
+// Error & Screen tracking:
+Usermon.shared.captureException(message: "Payment declined", route: "/checkout")
+Usermon.shared.captureScreenView("CartView")</code></pre>
+          </div>
+
+          <!-- Tab Content: Kotlin -->
+          <div id="tab-kotlin" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Gradle Dependency</span>
+              <span class="text-brand-400">implementation("dev.usermon:usermon-sdk:0.1.0")</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-purple-300"><code>import dev.usermon.sdk.Usermon
+
+// In Application.onCreate():
+Usermon.configure(
+    context = this,
+    ingestUrl = "https://xxx.convex.site",
+    ingestKey = "um_YOUR_PROJECT_KEY",
+    release = BuildConfig.VERSION_NAME,
+)
+
+// In activities or view models:
+Usermon.captureException("Network failure", route = "/feed")
+Usermon.captureScreenView("ProfileActivity")
+Usermon.captureSpan("GET", "/api/feed", status = 200, durationMs = 120L)</code></pre>
+          </div>
+
+          <!-- Tab Content: CLI -->
+          <div id="tab-cli" class="tab-pane p-6 space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400">
+              <span>Install via Cargo</span>
+              <span class="text-brand-400">cargo install usermon-cli</span>
+            </div>
+            <pre class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-sm overflow-x-auto text-yellow-300"><code># Set environment variables
+export USERMON_INGEST_URL=https://xxx.convex.site
+export USERMON_INGEST_KEY=um_YOUR_PROJECT_KEY
+
+# Health check
+usermon health
+
+# Send events
+usermon send exception -m "Crash in payment worker" --level fatal --route /workers
+usermon send span --method POST --route /api/pay --status 200 --duration-ms 89
+usermon send log --level warn -m "Disk at 88%" --attrs '{"disk":"/dev/sda1"}'
+
+# Pipe stdin logs in real-time
+journalctl -u my-app -f | usermon pipe --level info --release 1.0.0</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Ingest Simulator -->
+      <section id="simulator" class="space-y-6 pt-8 border-t border-slate-800">
+        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <span class="h-6 w-1.5 bg-brand-500 rounded-full"></span>
+          Interactive Payload & Ingest Simulator
+        </h2>
+        <p class="text-slate-300 leading-relaxed">
+          Test and preview the exact JSON wire payload sent to <code class="text-brand-400 font-mono">POST /v1/ingest</code>:
+        </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-dark-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <h3 class="font-bold text-white text-base">Payload Builder</h3>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Event Type</label>
+              <select id="simEventType" class="w-full bg-dark-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200">
+                <option value="exception">Exception / Error</option>
+                <option value="span">API Span</option>
+                <option value="log">Structured Log</option>
+                <option value="vital">RUM Vital (LCP/CLS/INP)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Platform</label>
+              <select id="simPlatform" class="w-full bg-dark-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200">
+                <option value="web">web</option>
+                <option value="android">android</option>
+                <option value="ios">ios</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Route / Path</label>
+              <input id="simRoute" type="text" value="/api/checkout" class="w-full bg-dark-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Message / Detail</label>
+              <input id="simMessage" type="text" value="Stripe card error: insufficient funds" class="w-full bg-dark-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 font-mono">
+            </div>
+            <button onclick="generatePayload()" class="w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 font-semibold text-white text-sm transition-colors shadow-md shadow-brand-500/20">
+              Generate Batch Payload
+            </button>
+          </div>
+
+          <div class="bg-dark-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono font-bold text-slate-400 uppercase">Wire JSON Output</span>
+                <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Valid Convex Schema</span>
+              </div>
+              <pre id="simOutput" class="bg-dark-950 p-4 rounded-lg border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto max-h-80"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Registry Publishing Guide -->
+      <section id="publishing" class="space-y-6 pt-8 border-t border-slate-800">
+        <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+          <span class="h-6 w-1.5 bg-brand-500 rounded-full"></span>
+          Registry Publishing Workflows
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+          <div class="p-5 bg-dark-900 border border-slate-800 rounded-xl space-y-2">
+            <span class="text-yellow-400 font-bold block">1. npm Registry</span>
+            <code class="text-xs text-slate-400 block">cd packages/npm<br>npm run build<br>npm publish --access public</code>
+          </div>
+          <div class="p-5 bg-dark-900 border border-slate-800 rounded-xl space-y-2">
+            <span class="text-blue-400 font-bold block">2. Python PyPI</span>
+            <code class="text-xs text-slate-400 block">cd packages/python<br>pip install hatch twine<br>hatch build && twine upload dist/*</code>
+          </div>
+          <div class="p-5 bg-dark-900 border border-slate-800 rounded-xl space-y-2">
+            <span class="text-orange-400 font-bold block">3. Rust crates.io</span>
+            <code class="text-xs text-slate-400 block">cargo publish -p usermon-core<br>cargo publish -p usermon-cli</code>
+          </div>
+          <div class="p-5 bg-dark-900 border border-slate-800 rounded-xl space-y-2">
+            <span class="text-cyan-400 font-bold block">4. Go Module Proxy</span>
+            <code class="text-xs text-slate-400 block">git tag packages/go/v0.1.0<br>git push origin packages/go/v0.1.0</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="pt-12 pb-8 border-t border-slate-800/80 text-center text-xs text-slate-500 font-mono">
+        <p>Built with ❤️ for Usermon. Real-time observability for modern engineering teams.</p>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    function selectTab(id) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('tab-active');
+        el.classList.add('text-slate-400');
+      });
+      document.getElementById(id).classList.remove('hidden');
+      event.currentTarget.classList.add('tab-active');
+      event.currentTarget.classList.remove('text-slate-400');
+    }
+
+    function generatePayload() {
+      const type = document.getElementById('simEventType').value;
+      const platform = document.getElementById('simPlatform').value;
+      const route = document.getElementById('simRoute').value;
+      const msg = document.getElementById('simMessage').value;
+      const now = Date.now();
+      const sessKey = "sess_" + Math.random().toString(36).substring(2, 12);
+
+      const batch = {
+        sessions: [{
+          sessionKey: sessKey,
+          platform: platform,
+          release: "1.0.0",
+          startedAt: now
+        }],
+        rumEvents: [],
+        apiSpans: [],
+        exceptions: [],
+        logs: []
+      };
+
+      if (type === 'exception') {
+        batch.exceptions.push({
+          message: msg,
+          platform: platform,
+          route: route,
+          level: "error",
+          sessionKey: sessKey,
+          timestamp: now
+        });
+      } else if (type === 'span') {
+        batch.apiSpans.push({
+          method: "POST",
+          route: route,
+          status: 200,
+          durationMs: 94,
+          platform: platform,
+          sessionKey: sessKey,
+          traceId: Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+          timestamp: now
+        });
+      } else if (type === 'log') {
+        batch.logs.push({
+          level: "info",
+          message: msg,
+          platform: platform,
+          sessionKey: sessKey,
+          attrsJson: JSON.stringify({ path: route }),
+          timestamp: now
+        });
+      } else if (type === 'vital') {
+        batch.rumEvents.push({
+          type: "vital",
+          name: "LCP",
+          value: 1850,
+          platform: platform,
+          route: route,
+          sessionKey: sessKey,
+          timestamp: now
+        });
+      }
+
+      document.getElementById('simOutput').innerText = JSON.stringify(batch, null, 2);
+    }
+
+    // Generate initial payload
+    generatePayload();
+  </script>
+</body>
+</html>

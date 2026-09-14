@@ -1,0 +1,54 @@
+{
+  "name": "usermon-sdk",
+  "version": "0.1.0",
+  "description": "Usermon SDK for browser and Node.js — RUM, traces, exceptions, logs, session replay",
+  "keywords": ["monitoring", "rum", "apm", "tracing", "errors", "observability"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/usermon/usermon-sdk"
+  },
+  "homepage": "https://usermon.dev",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./browser": {
+      "types": "./dist/types/browser.d.ts",
+      "import": "./dist/esm/browser.js",
+      "require": "./dist/cjs/browser.js"
+    },
+    "./node": {
+      "types": "./dist/types/node.d.ts",
+      "import": "./dist/esm/node.js",
+      "require": "./dist/cjs/node.js"
+    }
+  },
+  "bin": {
+    "usermon": "./bin/usermon.js"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.esm.json && tsc -p tsconfig.cjs.json && tsc -p tsconfig.types.json",
+    "test": "node --test tests/client.test.js",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
