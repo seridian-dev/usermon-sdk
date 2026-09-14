@@ -14,9 +14,14 @@
 
 'use strict';
 
-const { UsermonClient } = await import('../dist/cjs/index.js').catch(() =>
-  import('../src/client.ts').catch(() => ({ UsermonClient: null }))
+const mod = await import('../dist/esm/index.js').catch(() =>
+  import('../dist/cjs/index.js').catch(() => null)
 );
+const UsermonClient = mod?.UsermonClient || mod?.default?.UsermonClient;
+if (!UsermonClient) {
+  process.stderr.write('Error: Could not load UsermonClient. Please run "npm run build".\n');
+  process.exit(1);
+}
 
 const args = process.argv.slice(2);
 
