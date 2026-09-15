@@ -1,3 +1,5 @@
+![Usermon Kung Fu — multi-language SDK and CLI for Usermon](./assets/banner.jpg)
+
 # Usermon SDK
 
 Multi-language SDK and CLI for [Usermon](https://usermon.dev) — real-user and API monitoring.
