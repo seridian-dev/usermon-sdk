@@ -1,0 +1,59 @@
+# Usermon SDK & CLI — AI Agent Guide
+
+> Usermon is a real-user & API observability suite supporting Web, Node.js, Python, Go, iOS, Android, and terminal pipes.
+> Ingest Gateway: `https://ingest.usermon.dev`
+> Wire Protocol: `POST /v1/ingest` with `Authorization: Bearer um_<key>`
+
+## Quick Navigation for AI Agents
+- Overview & Telemetry Types: [docs/guides/architecture.md](docs/guides/architecture.md)
+- Multi-Language Quickstart: [docs/guides/quickstart.md](docs/guides/quickstart.md)
+- Full LLM Context File: [llms-full.txt](llms-full.txt)
+
+## Telemetry Primitives
+
+1. **Sessions**: User sessions with `sessionKey`, `platform` (`web`, `android`, `ios`), `startedAt` (epoch ms), and optional `release`, `deviceOs`, `country`.
+2. **RUM Events**: Real-User Monitoring events with `type` (`vital`, `page_view`, `screen_view`, `custom`), `name` (e.g. `LCP`, `CLS`, `INP`), `value` (numeric), `timestamp` (epoch ms).
+3. **API Spans**: HTTP/RPC traces with `method`, `route`, `status`, `durationMs`, `traceId`, `spanId`, `timestamp`. Supports W3C `traceparent` header propagation.
+4. **Exceptions**: Errors with `message`, `stack`, `level` (`info`, `warning`, `error`, `fatal`), `route`, `timestamp`. Deduplicated by fingerprint.
+5. **Logs**: Structured logs with `level` (`debug`, `info`, `warn`, `error`, `fatal`), `message`, `attrsJson` (JSON string), `timestamp`.
+6. **Replays**: DOM session replay event chunks (rrweb compatible).
+
+## AI Integration Cheatsheet
+
+### TypeScript / Browser
+```ts
+import { init, captureException, captureLog } from 'usermon-sdk/browser';
+init({ ingestKey: 'um_xxx', release: '1.0.0', replay: true });
+```
+
+### TypeScript / Node.js
+```ts
+import { init, captureLog, withSpan } from 'usermon-sdk/node';
+init({ ingestKey: process.env.USERMON_INGEST_KEY! });
+const data = await withSpan('GET', '/api/data', () => fetchData());
+```
+
+### Python
+```python
+import usermon
+client = usermon.init(ingest_key='um_xxx')
+client.capture_exception("Failed query", route="/api/users")
+client.capture_span("POST", "/checkout", status=201, duration_ms=85)
+```
+
+### Go
+```go
+import "github.com/seridian-dev/usermon-sdk-go/usermon"
+client := usermon.New("um_xxx")
+client.CaptureSpan(ctx, usermon.SpanOpts{Method: "GET", Route: "/api/items", Status: 200, DurationMs: 34})
+```
+
+### CLI
+```bash
+usermon login
+usermon link --key um_xxx
+usermon init
+usermon health
+usermon send exception -m "Test panic"
+tail -f /var/log/app.log | usermon pipe --level info
+```
