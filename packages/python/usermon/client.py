@@ -34,16 +34,20 @@ class UsermonClient:
         client.capture_log("Hello", level="info", attrs={"user": "alice"})
     """
 
+    DEFAULT_ENDPOINT = "https://ingest.usermon.dev"
+
     def __init__(
         self,
-        ingest_url: str,
         ingest_key: str,
+        endpoint: Optional[str] = None,
+        ingest_url: Optional[str] = None,
         platform: Platform = "web",
         release: Optional[str] = None,
         session_key: Optional[str] = None,
         timeout: float = 10.0,
     ) -> None:
-        self.ingest_url = ingest_url.rstrip("/")
+        raw_url = endpoint or ingest_url or self.DEFAULT_ENDPOINT
+        self.ingest_url = raw_url.rstrip("/").removesuffix("/v1/ingest").rstrip("/")
         self.ingest_key = ingest_key
         self.platform: Platform = platform
         self.release = release

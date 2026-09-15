@@ -24,16 +24,18 @@ _singleton: "UsermonClient | None" = None
 
 
 def init(
-    ingest_url: str,
     ingest_key: str,
+    endpoint: "str | None" = None,
+    ingest_url: "str | None" = None,
     platform: "Platform" = "web",
     release: "str | None" = None,
 ) -> "UsermonClient":
     """Initialize the global Usermon client."""
     global _singleton
     _singleton = UsermonClient(
-        ingest_url=ingest_url,
         ingest_key=ingest_key,
+        endpoint=endpoint,
+        ingest_url=ingest_url,
         platform=platform,
         release=release,
     )

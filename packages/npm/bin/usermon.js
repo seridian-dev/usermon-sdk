@@ -35,7 +35,7 @@ function env(name) {
   return process.env[name];
 }
 
-const ingestUrl = flag('ingest-url') ?? env('USERMON_INGEST_URL');
+const ingestUrl = flag('endpoint') ?? flag('ingest-url') ?? env('USERMON_ENDPOINT') ?? env('USERMON_INGEST_URL') ?? 'https://ingest.usermon.dev';
 const ingestKey = flag('ingest-key') ?? env('USERMON_INGEST_KEY');
 const command = args.find(a => !a.startsWith('-'));
 
@@ -66,7 +66,7 @@ if (!command || command === 'help' || command === '--help') {
 usermon <command> [options]
 
 Global:
-  --ingest-url <url>   or USERMON_INGEST_URL
+  --endpoint <url>     Ingest endpoint (defaults to https://ingest.usermon.dev)
   --ingest-key <key>   or USERMON_INGEST_KEY
 
 Commands:
@@ -80,7 +80,6 @@ Commands:
   process.exit(0);
 }
 
-if (!ingestUrl) die('Missing --ingest-url or USERMON_INGEST_URL');
 if (!ingestKey && command !== 'health') die('Missing --ingest-key or USERMON_INGEST_KEY');
 
 const client = new UsermonClient({ ingestUrl, ingestKey: ingestKey ?? '' });

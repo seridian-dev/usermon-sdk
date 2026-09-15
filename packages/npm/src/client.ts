@@ -67,7 +67,8 @@ export class UsermonClient {
   };
 
   constructor(options: UsermonOptions) {
-    this.ingestUrl = options.ingestUrl.replace(/\/$/, '');
+    const rawUrl = options.endpoint || options.ingestUrl || 'https://ingest.usermon.dev';
+    this.ingestUrl = rawUrl.replace(/\/v1\/ingest\/?$/, '').replace(/\/$/, '');
     this.ingestKey = options.ingestKey;
     this.platform = options.platform ?? 'web';
     this.release = options.release;

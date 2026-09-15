@@ -26,8 +26,14 @@ public enum UsermonError: Error, LocalizedError {
 // MARK: - Configuration
 
 public struct UsermonConfiguration: Sendable {
-    /// Full ingest base URL, e.g. https://xxx.convex.site
-    public var ingestUrl: String
+    public static let defaultEndpoint = "https://ingest.usermon.dev"
+
+    /// Ingest endpoint URL (defaults to "https://ingest.usermon.dev")
+    public var endpoint: String
+    public var ingestUrl: String {
+        get { endpoint }
+        set { endpoint = newValue }
+    }
     /// Project ingest key (um_...)
     public var ingestKey: String
     /// Default platform (default: .ios)
@@ -42,6 +48,32 @@ public struct UsermonConfiguration: Sendable {
     public var maxBatchSize: Int
 
     public init(
+        ingestKey: String,
+        endpoint: String = UsermonConfiguration.defaultEndpoint,
+        platform: Platform = .ios,
+        release: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+        tracesSampleRate: Double = 1.0,
+        flushInterval: TimeInterval = 5.0,
+        maxBatchSize: Int = 50
+    ) {
+        let cleaned = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        var base = cleaned.isEmpty ? UsermonConfiguration.defaultEndpoint : cleaned
+        if base.hasSuffix("/v1/ingest") {
+            base = String(base.dropLast("/v1/ingest".count))
+        }
+        if base.hasSuffix("/") {
+            base = String(base.dropLast())
+        }
+        self.endpoint = base
+        self.ingestKey = ingestKey
+        self.platform = platform
+        self.release = release
+        self.tracesSampleRate = tracesSampleRate
+        self.flushInterval = flushInterval
+        self.maxBatchSize = maxBatchSize
+    }
+
+    public init(
         ingestUrl: String,
         ingestKey: String,
         platform: Platform = .ios,
@@ -50,13 +82,15 @@ public struct UsermonConfiguration: Sendable {
         flushInterval: TimeInterval = 5.0,
         maxBatchSize: Int = 50
     ) {
-        self.ingestUrl = ingestUrl
-        self.ingestKey = ingestKey
-        self.platform = platform
-        self.release = release
-        self.tracesSampleRate = tracesSampleRate
-        self.flushInterval = flushInterval
-        self.maxBatchSize = maxBatchSize
+        self.init(
+            ingestKey: ingestKey,
+            endpoint: ingestUrl,
+            platform: platform,
+            release: release,
+            tracesSampleRate: tracesSampleRate,
+            flushInterval: flushInterval,
+            maxBatchSize: maxBatchSize
+        )
     }
 }
 
@@ -365,15 +399,15 @@ public enum Usermon {
     /// Call this once at app launch (e.g. in `application(_:didFinishLaunchingWithOptions:)`).
     @discardableResult
     public static func configure(
-        ingestUrl: String,
         ingestKey: String,
+        endpoint: String = UsermonConfiguration.defaultEndpoint,
         platform: Platform = .ios,
         release: String? = nil,
         tracesSampleRate: Double = 1.0
     ) -> UsermonClient {
         let config = UsermonConfiguration(
-            ingestUrl: ingestUrl,
             ingestKey: ingestKey,
+            endpoint: endpoint,
             platform: platform,
             release: release,
             tracesSampleRate: tracesSampleRate
@@ -382,6 +416,24 @@ public enum Usermon {
         _shared = client
         Task { client.startSession() }
         return client
+    }
+
+    /// Configure the global Usermon client (legacy signature).
+    @discardableResult
+    public static func configure(
+        ingestUrl: String,
+        ingestKey: String,
+        platform: Platform = .ios,
+        release: String? = nil,
+        tracesSampleRate: Double = 1.0
+    ) -> UsermonClient {
+        return configure(
+            ingestKey: ingestKey,
+            endpoint: ingestUrl,
+            platform: platform,
+            release: release,
+            tracesSampleRate: tracesSampleRate
+        )
     }
 
     /// The configured global client. Crashes if `configure(...)` has not been called.

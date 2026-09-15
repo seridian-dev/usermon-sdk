@@ -18,7 +18,7 @@ pub fn hex_id(bytes: usize) -> String {
     id[..bytes.min(32)].to_string()
 }
 
-// ── Client ────────────────────────────────────────────────────────────────────
+pub const DEFAULT_ENDPOINT: &str = "https://ingest.usermon.dev";
 
 /// Synchronous Usermon client backed by `reqwest::blocking`.
 #[derive(Clone)]
@@ -32,12 +32,19 @@ impl UsermonClient {
     /// Create a new client.
     ///
     /// # Arguments
-    /// * `ingest_url` – Full base URL, e.g. `https://xxx.convex.site`
+    /// * `endpoint` – Ingest endpoint URL (defaults to `https://ingest.usermon.dev` if empty)
     /// * `ingest_key` – Project ingest key starting with `um_`
-    pub fn new(ingest_url: impl Into<String>, ingest_key: impl Into<String>) -> Self {
-        let ingest_url = ingest_url.into().trim_end_matches('/').to_string();
+    pub fn new(endpoint: impl Into<String>, ingest_key: impl Into<String>) -> Self {
+        let ep = endpoint.into();
+        let trimmed = ep.trim();
+        let base = if trimmed.is_empty() {
+            DEFAULT_ENDPOINT.to_string()
+        } else {
+            let s = trimmed.trim_end_matches('/');
+            s.strip_suffix("/v1/ingest").unwrap_or(s).trim_end_matches('/').to_string()
+        };
         Self {
-            ingest_url,
+            ingest_url: base,
             ingest_key: ingest_key.into(),
             http: reqwest::blocking::Client::new(),
         }
