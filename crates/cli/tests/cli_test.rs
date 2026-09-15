@@ -28,5 +28,5 @@ fn test_cli_missing_credentials_fails_gracefully() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("USERMON_INGEST_URL"));
+    assert!(stderr.contains("USERMON_INGEST_KEY"));
 }

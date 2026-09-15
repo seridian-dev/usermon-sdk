@@ -1,3 +1,6 @@
+mod auth;
+mod project;
+
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use serde_json::Value;
@@ -41,11 +44,15 @@ enum OutputFormat { Text, Json }
 #[command(
     name = "usermon",
     version,
-    about = "Usermon CLI — send monitoring events from the terminal",
+    about = "Usermon CLI — developer & operational tool for Usermon observability",
     long_about = None,
 )]
 struct Cli {
-    /// Ingest base URL (e.g. https://xxx.convex.site)
+    /// Ingest endpoint URL (defaults to https://ingest.usermon.dev)
+    #[arg(long, alias = "endpoint", env = "USERMON_ENDPOINT", global = true)]
+    endpoint: Option<String>,
+
+    /// Legacy alias for --endpoint
     #[arg(long, env = "USERMON_INGEST_URL", global = true)]
     ingest_url: Option<String>,
 
@@ -63,6 +70,41 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Authenticate with Usermon via browser or token
+    Login {
+        /// Manually supply an authentication token instead of opening browser
+        #[arg(long)]
+        token: Option<String>,
+
+        /// Custom portal URL (defaults to https://app.usermon.dev)
+        #[arg(long)]
+        portal_url: Option<String>,
+    },
+
+    /// Log out and clear saved CLI credentials
+    Logout,
+
+    /// Show current authenticated user and linked project status
+    Whoami,
+
+    /// Link the current directory to a Usermon project
+    Link {
+        /// Project ID or slug
+        #[arg(long, short = 'p')]
+        project: Option<String>,
+
+        /// Ingest key for this project (um_...)
+        #[arg(long, short = 'k')]
+        key: Option<String>,
+
+        /// Ingest endpoint URL
+        #[arg(long)]
+        endpoint: Option<String>,
+    },
+
+    /// Initialize and generate Usermon SDK setup for current tech stack
+    Init,
+
     /// Check ingest endpoint health
     Health,
 
@@ -202,14 +244,27 @@ enum SendEvent {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 fn make_client(cli: &Cli) -> Result<UsermonClient, String> {
+    let local_project = project::find_project_config(&std::env::current_dir().unwrap_or_default())
+        .map(|(_, cfg)| cfg);
+
     let url = cli
-        .ingest_url
+        .endpoint
         .as_deref()
-        .ok_or("Missing --ingest-url or USERMON_INGEST_URL")?;
+        .or_else(|| cli.ingest_url.as_deref())
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("USERMON_ENDPOINT").ok())
+        .or_else(|| std::env::var("USERMON_INGEST_URL").ok())
+        .or_else(|| local_project.as_ref().map(|p| p.endpoint.clone()))
+        .unwrap_or_else(|| usermon_core::client::DEFAULT_ENDPOINT.to_string());
+
     let key = cli
         .ingest_key
         .as_deref()
-        .ok_or("Missing --ingest-key or USERMON_INGEST_KEY")?;
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("USERMON_INGEST_KEY").ok())
+        .or_else(|| local_project.as_ref().and_then(|p| p.ingest_key.clone()))
+        .ok_or("Missing --ingest-key, USERMON_INGEST_KEY, or run `usermon link` to connect a project")?;
+
     Ok(UsermonClient::new(url, key))
 }
 
@@ -263,6 +318,173 @@ fn main() {
 
     let result: Result<(), String> = (|| {
         match &cli.command {
+            Command::Login { token, portal_url } => {
+                if let Some(tok) = token {
+                    let creds = auth::Credentials {
+                        token: tok.clone(),
+                        email: None,
+                        user_id: None,
+                        portal_url: portal_url.clone().unwrap_or_else(|| auth::DEFAULT_PORTAL_URL.to_string()),
+                        created_at: now_ms(),
+                    };
+                    auth::save_credentials(&creds)?;
+                    println!("{} {}", "✓".green().bold(), "Logged in successfully via manual token!".green());
+                } else {
+                    let creds = auth::login_interactive(portal_url.as_deref())?;
+                    let user_label = creds.email.as_deref().unwrap_or(&creds.token[..8.min(creds.token.len())]);
+                    println!("{} Logged in as {}", "✓".green().bold(), user_label.cyan().bold());
+                }
+            }
+
+            Command::Logout => {
+                let deleted = auth::delete_credentials()?;
+                if deleted {
+                    println!("{} {}", "✓".green().bold(), "Logged out successfully. Removed saved credentials.".green());
+                } else {
+                    println!("No active login session found.");
+                }
+            }
+
+            Command::Whoami => {
+                let creds = auth::load_credentials();
+                let local_project = project::find_project_config(&std::env::current_dir().unwrap_or_default());
+
+                match creds {
+                    Some(c) => {
+                        println!("{}", "Authentication:".bold());
+                        if let Some(email) = c.email {
+                            println!("  Email:    {}", email.cyan());
+                        }
+                        if let Some(uid) = c.user_id {
+                            println!("  User ID:  {}", uid.cyan());
+                        }
+                        let preview = if c.token.len() > 8 {
+                            format!("{}...", &c.token[..8])
+                        } else {
+                            c.token.clone()
+                        };
+                        println!("  Token:    {}", preview.dimmed());
+                        println!("  Portal:   {}", c.portal_url.dimmed());
+                    }
+                    None => {
+                        println!("{} Not logged in. Run {} to authenticate.", "!".yellow().bold(), "usermon login".cyan());
+                    }
+                }
+
+                println!();
+                match local_project {
+                    Some((path, p)) => {
+                        println!("{}", "Linked Project:".bold());
+                        println!("  File:     {}", path.display().to_string().dimmed());
+                        println!("  Project:  {}", p.project_slug.as_deref().unwrap_or(&p.project_id).cyan());
+                        println!("  Endpoint: {}", p.endpoint.cyan());
+                        if let Some(key) = p.ingest_key {
+                            let key_preview = if key.len() > 8 { format!("{}...", &key[..8]) } else { key };
+                            println!("  Key:      {}", key_preview.dimmed());
+                        }
+                    }
+                    None => {
+                        println!("{} No project linked to this directory. Run {} to link.", "i".blue().bold(), "usermon link".cyan());
+                    }
+                }
+            }
+
+            Command::Link { project, key, endpoint } => {
+                let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+                let proj_id = project.clone().unwrap_or_else(|| {
+                    cwd.file_name().and_then(|s| s.to_str()).unwrap_or("my-project").to_string()
+                });
+
+                let ep = endpoint.clone().unwrap_or_else(|| usermon_core::client::DEFAULT_ENDPOINT.to_string());
+                let config = project::ProjectConfig {
+                    project_id: proj_id.clone(),
+                    project_slug: Some(proj_id.clone()),
+                    endpoint: ep,
+                    ingest_key: key.clone(),
+                };
+
+                let saved_path = project::save_project_config(&cwd, &config)?;
+                println!("{} Linked project {} to {}", "✓".green().bold(), proj_id.cyan().bold(), saved_path.display().to_string().dimmed());
+                if config.ingest_key.is_none() {
+                    println!("{} No ingest key specified. Add key with: {}", "Tip:".yellow().bold(), format!("usermon link --key um_xxx").dimmed());
+                }
+            }
+
+            Command::Init => {
+                let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+                let framework = project::detect_framework(&cwd);
+                let local_project = project::find_project_config(&cwd).map(|(_, c)| c);
+                let sample_key = local_project.as_ref().and_then(|p| p.ingest_key.as_deref()).unwrap_or("um_YOUR_PROJECT_KEY");
+
+                println!("{} Detected framework: {}", "✦".magenta().bold(), framework.cyan().bold());
+                println!("{}", "Add Usermon observability in 3 lines:\n".bold());
+
+                match framework {
+                    "nextjs" | "react" => {
+                        println!("1. Install SDK:\n   {}", "npm install usermon-sdk".cyan());
+                        println!("2. In your root entry layout / component:");
+                        println!("{}", format!(
+r#"   import {{ init }} from 'usermon-sdk/browser';
+
+   init({{
+     ingestKey: '{sample_key}',
+     release: '1.0.0',
+     replay: true,
+   }});"#,
+                        ).dimmed());
+                    }
+                    "node" => {
+                        println!("1. Install SDK:\n   {}", "npm install usermon-sdk".cyan());
+                        println!("2. In your server entry file:");
+                        println!("{}", format!(
+r#"   import {{ init, withSpan }} from 'usermon-sdk/node';
+
+   init({{ ingestKey: '{sample_key}' }});"#,
+                        ).dimmed());
+                    }
+                    "python" => {
+                        println!("1. Install SDK:\n   {}", "pip install usermon-sdk".cyan());
+                        println!("2. In your application file:");
+                        println!("{}", format!(
+r#"   import usermon
+
+   mon = usermon.init(ingest_key='{sample_key}')"#,
+                        ).dimmed());
+                    }
+                    "go" => {
+                        println!("1. Install SDK:\n   {}", "go get github.com/seridian-dev/usermon-sdk-go".cyan());
+                        println!("2. In your main.go:");
+                        println!("{}", format!(
+r#"   import "github.com/seridian-dev/usermon-sdk-go/usermon"
+
+   client := usermon.New("{sample_key}")"#,
+                        ).dimmed());
+                    }
+                    "swift" => {
+                        println!("1. Add SPM Dependency:\n   {}", "https://github.com/seridian-dev/usermon-sdk".cyan());
+                        println!("2. In your App delegate / init:");
+                        println!("{}", format!(
+r#"   import UsermonSDK
+
+   Usermon.configure(ingestKey: "{sample_key}")"#,
+                        ).dimmed());
+                    }
+                    "kotlin" => {
+                        println!("1. Add to build.gradle.kts:\n   {}", "implementation(\"dev.usermon:usermon-sdk:0.1.0\")".cyan());
+                        println!("2. In Application.onCreate():");
+                        println!("{}", format!(
+r#"   import dev.usermon.sdk.Usermon
+
+   Usermon.configure(context = this, ingestKey = "{sample_key}")"#,
+                        ).dimmed());
+                    }
+                    _ => {
+                        println!("1. Add usermon config to this directory:\n   {}", "usermon link".cyan());
+                        println!("2. Send telemetry anytime:\n   {}", "usermon send exception -m \"Test crash\"".cyan());
+                    }
+                }
+            }
+
             Command::Health => {
                 let client = make_client(&cli)?;
                 let resp = client.health().map_err(|e| e.to_string())?;

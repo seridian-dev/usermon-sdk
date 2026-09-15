@@ -11,17 +11,22 @@ from .client import UsermonClient
 
 
 def _client_from_args(args: argparse.Namespace) -> UsermonClient:
-    url: Optional[str] = getattr(args, "ingest_url", None) or os.environ.get("USERMON_INGEST_URL")
+    url: Optional[str] = (
+        getattr(args, "endpoint", None)
+        or getattr(args, "ingest_url", None)
+        or os.environ.get("USERMON_ENDPOINT")
+        or os.environ.get("USERMON_INGEST_URL")
+        or UsermonClient.DEFAULT_ENDPOINT
+    )
     key: Optional[str] = getattr(args, "ingest_key", None) or os.environ.get("USERMON_INGEST_KEY")
-    if not url:
-        sys.exit("✗  Missing --ingest-url or USERMON_INGEST_URL")
     if not key:
         sys.exit("✗  Missing --ingest-key or USERMON_INGEST_KEY")
-    return UsermonClient(ingest_url=url, ingest_key=key)
+    return UsermonClient(ingest_key=key, endpoint=url)
 
 
 def _global_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--ingest-url", metavar="URL", help="Ingest base URL (or USERMON_INGEST_URL)")
+    parser.add_argument("--endpoint", metavar="URL", help="Ingest endpoint URL (defaults to https://ingest.usermon.dev)")
+    parser.add_argument("--ingest-url", metavar="URL", help="Legacy alias for --endpoint")
     parser.add_argument("--ingest-key", metavar="KEY", help="Ingest key (or USERMON_INGEST_KEY)")
     parser.add_argument("--format", choices=["text", "json"], default="text")
 

@@ -36,7 +36,9 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	// Global flags
-	ingestURL := flag.String("ingest-url", getEnv("USERMON_INGEST_URL", ""), "Ingest base URL")
+	defaultURL := getEnv("USERMON_ENDPOINT", getEnv("USERMON_INGEST_URL", usermon.DefaultEndpoint))
+	endpoint := flag.String("endpoint", defaultURL, "Ingest endpoint URL")
+	ingestURL := flag.String("ingest-url", "", "Legacy alias for --endpoint")
 	ingestKey := flag.String("ingest-key", getEnv("USERMON_INGEST_KEY", ""), "Ingest key (um_...)")
 	format := flag.String("format", "text", "Output format: text|json")
 	flag.Parse()
@@ -54,11 +56,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *ingestURL == "" {
-		die("Missing --ingest-url or USERMON_INGEST_URL")
+	targetURL := *endpoint
+	if *ingestURL != "" {
+		targetURL = *ingestURL
+	}
+	if targetURL == "" {
+		targetURL = usermon.DefaultEndpoint
 	}
 
-	client := usermon.New(*ingestURL, *ingestKey)
+	client := usermon.New(targetURL, *ingestKey)
 	ctx := context.Background()
 
 	switch cmd {

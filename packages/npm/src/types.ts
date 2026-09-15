@@ -96,8 +96,10 @@ export interface IngestResponse {
 // ── Init options ──────────────────────────────────────────────────────────────
 
 export interface UsermonOptions {
-  /** Full ingest base URL, e.g. https://xxx.convex.site */
-  ingestUrl: string;
+  /** Ingest endpoint URL (defaults to 'https://ingest.usermon.dev') */
+  endpoint?: string;
+  /** Legacy alias for endpoint */
+  ingestUrl?: string;
   /** Project ingest key starting with um_ */
   ingestKey: string;
   /** Default platform for all events */

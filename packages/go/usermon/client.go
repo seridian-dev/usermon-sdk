@@ -13,10 +13,20 @@ import (
 	"time"
 )
 
-// ── Options ───────────────────────────────────────────────────────────────────
+// DefaultEndpoint is the default Usermon Cloud ingestion gateway.
+const DefaultEndpoint = "https://ingest.usermon.dev"
 
 // Option is a functional option for the Client.
 type Option func(*Client)
+
+// WithEndpoint sets a custom ingest endpoint URL.
+func WithEndpoint(endpoint string) Option {
+	return func(c *Client) {
+		trimmed := strings.TrimRight(endpoint, "/")
+		trimmed = strings.TrimSuffix(trimmed, "/v1/ingest")
+		c.ingestURL = strings.TrimRight(trimmed, "/")
+	}
+}
 
 // WithPlatform sets the default platform for all events.
 func WithPlatform(p Platform) Option {
@@ -53,14 +63,21 @@ type Client struct {
 // New creates a new Usermon client.
 //
 //	client := usermon.New(
-//	    "https://xxx.convex.site",
+//	    "https://ingest.usermon.dev",
 //	    "um_xxx",
 //	    usermon.WithPlatform(usermon.PlatformWeb),
 //	    usermon.WithRelease("1.0.0"),
 //	)
 func New(ingestURL, ingestKey string, opts ...Option) *Client {
+	url := strings.TrimRight(ingestURL, "/")
+	if url == "" {
+		url = DefaultEndpoint
+	} else {
+		url = strings.TrimSuffix(url, "/v1/ingest")
+		url = strings.TrimRight(url, "/")
+	}
 	c := &Client{
-		ingestURL:  strings.TrimRight(ingestURL, "/"),
+		ingestURL:  url,
 		ingestKey:  ingestKey,
 		platform:   PlatformWeb,
 		sessionKey: newSessionKey(),

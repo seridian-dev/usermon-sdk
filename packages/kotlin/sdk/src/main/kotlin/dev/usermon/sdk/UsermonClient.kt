@@ -13,8 +13,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 data class UsermonConfig(
-    /** Full ingest base URL, e.g. https://xxx.convex.site */
-    val ingestUrl: String,
+    /** Ingest endpoint URL (default: "https://ingest.usermon.dev") */
+    val endpoint: String = "https://ingest.usermon.dev",
+    val ingestUrl: String = endpoint.trimEnd('/').removeSuffix("/v1/ingest").trimEnd('/'),
     /** Project ingest key (um_...) */
     val ingestKey: String,
     /** Default platform (default: ANDROID) */
@@ -282,8 +283,8 @@ object Usermon {
      */
     fun configure(
         context: Context,
-        ingestUrl: String,
         ingestKey: String,
+        endpoint: String = "https://ingest.usermon.dev",
         platform: Platform = Platform.ANDROID,
         release: String? = null,
         flushIntervalMs: Long = 5_000L,
@@ -294,7 +295,7 @@ object Usermon {
 
         val client = UsermonClient(
             UsermonConfig(
-                ingestUrl = ingestUrl,
+                endpoint = endpoint,
                 ingestKey = ingestKey,
                 platform = platform,
                 release = release ?: versionName,
@@ -305,6 +306,23 @@ object Usermon {
         client.startSession()
         return client
     }
+
+    /** Legacy overload with ingestUrl. */
+    fun configure(
+        context: Context,
+        ingestUrl: String,
+        ingestKey: String,
+        platform: Platform = Platform.ANDROID,
+        release: String? = null,
+        flushIntervalMs: Long = 5_000L,
+    ): UsermonClient = configure(
+        context = context,
+        ingestKey = ingestKey,
+        endpoint = ingestUrl,
+        platform = platform,
+        release = release,
+        flushIntervalMs = flushIntervalMs,
+    )
 
     /** The configured global client. Throws if `configure()` was not called. */
     val shared: UsermonClient
