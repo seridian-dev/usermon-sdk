@@ -1,0 +1,11 @@
+{
+  "name": "usermon-sdk-git-hooks",
+  "private": true,
+  "description": "Installs the lefthook git hooks for this Rust workspace. Not published.",
+  "scripts": {
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "lefthook": "^2.2.2"
+  }
+}
