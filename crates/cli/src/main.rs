@@ -3,37 +3,70 @@ use colored::Colorize;
 use serde_json::Value;
 use std::io::{self, BufRead};
 use usermon_core::{
-    client::now_ms, IssueLevel, LogLevel, Platform, UsermonClient, IngestBatch, LogEvent,
+    client::now_ms, IngestBatch, IssueLevel, LogEvent, LogLevel, Platform, UsermonClient,
 };
 
 // ── Arg types ─────────────────────────────────────────────────────────────────
 
 #[derive(Clone, ValueEnum, Debug)]
-enum PlatformArg { Web, Android, Ios }
+enum PlatformArg {
+    Web,
+    Android,
+    Ios,
+}
 impl From<PlatformArg> for Platform {
     fn from(p: PlatformArg) -> Self {
-        match p { PlatformArg::Web => Platform::Web, PlatformArg::Android => Platform::Android, PlatformArg::Ios => Platform::Ios }
+        match p {
+            PlatformArg::Web => Platform::Web,
+            PlatformArg::Android => Platform::Android,
+            PlatformArg::Ios => Platform::Ios,
+        }
     }
 }
 
 #[derive(Clone, ValueEnum, Debug)]
-enum LogLevelArg { Debug, Info, Warn, Error, Fatal }
+enum LogLevelArg {
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Fatal,
+}
 impl From<LogLevelArg> for LogLevel {
     fn from(l: LogLevelArg) -> Self {
-        match l { LogLevelArg::Debug => LogLevel::Debug, LogLevelArg::Info => LogLevel::Info, LogLevelArg::Warn => LogLevel::Warn, LogLevelArg::Error => LogLevel::Error, LogLevelArg::Fatal => LogLevel::Fatal }
+        match l {
+            LogLevelArg::Debug => LogLevel::Debug,
+            LogLevelArg::Info => LogLevel::Info,
+            LogLevelArg::Warn => LogLevel::Warn,
+            LogLevelArg::Error => LogLevel::Error,
+            LogLevelArg::Fatal => LogLevel::Fatal,
+        }
     }
 }
 
 #[derive(Clone, ValueEnum, Debug)]
-enum IssueLevelArg { Info, Warning, Error, Fatal }
+enum IssueLevelArg {
+    Info,
+    Warning,
+    Error,
+    Fatal,
+}
 impl From<IssueLevelArg> for IssueLevel {
     fn from(l: IssueLevelArg) -> Self {
-        match l { IssueLevelArg::Info => IssueLevel::Info, IssueLevelArg::Warning => IssueLevel::Warning, IssueLevelArg::Error => IssueLevel::Error, IssueLevelArg::Fatal => IssueLevel::Fatal }
+        match l {
+            IssueLevelArg::Info => IssueLevel::Info,
+            IssueLevelArg::Warning => IssueLevel::Warning,
+            IssueLevelArg::Error => IssueLevel::Error,
+            IssueLevelArg::Fatal => IssueLevel::Fatal,
+        }
     }
 }
 
 #[derive(Clone, ValueEnum, Debug)]
-enum OutputFormat { Text, Json }
+enum OutputFormat {
+    Text,
+    Json,
+}
 
 // ── CLI structure ─────────────────────────────────────────────────────────────
 
@@ -216,7 +249,10 @@ fn make_client(cli: &Cli) -> Result<UsermonClient, String> {
 fn print_success(format: &OutputFormat, label: &str, value: &impl serde::Serialize) {
     match format {
         OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(value).unwrap_or_default());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(value).unwrap_or_default()
+            );
         }
         OutputFormat::Text => {
             let json = serde_json::to_value(value).unwrap_or_default();
@@ -272,7 +308,16 @@ fn main() {
             Command::Send { event } => {
                 let client = make_client(&cli)?;
                 match event {
-                    SendEvent::Exception { message, stack, platform, route, level, release, session_key, trace_id } => {
+                    SendEvent::Exception {
+                        message,
+                        stack,
+                        platform,
+                        route,
+                        level,
+                        release,
+                        session_key,
+                        trace_id,
+                    } => {
                         let resp = client
                             .capture_exception(
                                 message.clone(),
@@ -288,7 +333,15 @@ fn main() {
                         print_success(format, "Exception sent", &resp);
                     }
 
-                    SendEvent::Log { level, message, attrs, platform, release, session_key, trace_id } => {
+                    SendEvent::Log {
+                        level,
+                        message,
+                        attrs,
+                        platform,
+                        release,
+                        session_key,
+                        trace_id,
+                    } => {
                         let attrs_val: Option<Value> = attrs
                             .as_ref()
                             .map(|s| serde_json::from_str(s).map_err(|e| e.to_string()))
@@ -307,7 +360,17 @@ fn main() {
                         print_success(format, "Log sent", &resp);
                     }
 
-                    SendEvent::Span { method, route, status, duration_ms, platform, release, trace_id, span_id, session_key } => {
+                    SendEvent::Span {
+                        method,
+                        route,
+                        status,
+                        duration_ms,
+                        platform,
+                        release,
+                        trace_id,
+                        span_id,
+                        session_key,
+                    } => {
                         let resp = client
                             .capture_span(
                                 method.clone(),
@@ -324,7 +387,12 @@ fn main() {
                         print_success(format, "Span sent", &resp);
                     }
 
-                    SendEvent::Session { session_key, platform, release, device_os } => {
+                    SendEvent::Session {
+                        session_key,
+                        platform,
+                        release,
+                        device_os,
+                    } => {
                         let (key, resp) = client
                             .start_session(
                                 platform.clone().into(),
@@ -339,7 +407,8 @@ fn main() {
 
                     SendEvent::Batch { file } => {
                         let content = read_file_or_stdin(file)?;
-                        let batch: IngestBatch = serde_json::from_str(&content).map_err(|e| format!("Invalid JSON: {e}"))?;
+                        let batch: IngestBatch = serde_json::from_str(&content)
+                            .map_err(|e| format!("Invalid JSON: {e}"))?;
                         let client = make_client(&cli)?;
                         let resp = client.ingest(&batch).map_err(|e| e.to_string())?;
                         print_success(format, "Batch sent", &resp);
@@ -347,14 +416,21 @@ fn main() {
                 }
             }
 
-            Command::Pipe { platform, level, release, session_key } => {
+            Command::Pipe {
+                platform,
+                level,
+                release,
+                session_key,
+            } => {
                 let client = make_client(&cli)?;
                 let stdin = io::stdin();
                 let mut count = 0u32;
                 let mut logs: Vec<LogEvent> = Vec::new();
                 for line in stdin.lock().lines() {
                     let msg = line.map_err(|e| e.to_string())?;
-                    if msg.trim().is_empty() { continue; }
+                    if msg.trim().is_empty() {
+                        continue;
+                    }
                     logs.push(LogEvent {
                         level: level.clone().into(),
                         message: msg,
@@ -366,19 +442,29 @@ fn main() {
                         timestamp: now_ms(),
                     });
                     if logs.len() >= 50 {
-                        let batch = IngestBatch { logs: std::mem::take(&mut logs), ..Default::default() };
+                        let batch = IngestBatch {
+                            logs: std::mem::take(&mut logs),
+                            ..Default::default()
+                        };
                         client.ingest(&batch).map_err(|e| e.to_string())?;
                         count += 50;
                     }
                 }
                 if !logs.is_empty() {
                     count += logs.len() as u32;
-                    let batch = IngestBatch { logs, ..Default::default() };
+                    let batch = IngestBatch {
+                        logs,
+                        ..Default::default()
+                    };
                     client.ingest(&batch).map_err(|e| e.to_string())?;
                 }
                 match format {
                     OutputFormat::Json => println!("{{\"ok\":true,\"logs\":{count}}}"),
-                    OutputFormat::Text => println!("{} Piped {} log line(s)", "✓".green().bold(), count.to_string().cyan()),
+                    OutputFormat::Text => println!(
+                        "{} Piped {} log line(s)",
+                        "✓".green().bold(),
+                        count.to_string().cyan()
+                    ),
                 }
             }
         }

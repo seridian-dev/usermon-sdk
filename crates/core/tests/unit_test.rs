@@ -3,29 +3,65 @@ use usermon_core::*;
 #[test]
 fn test_platform_parsing_and_display() {
     assert_eq!("web".parse::<Platform>().unwrap().to_string(), "web");
-    assert_eq!("android".parse::<Platform>().unwrap().to_string(), "android");
+    assert_eq!(
+        "android".parse::<Platform>().unwrap().to_string(),
+        "android"
+    );
     assert_eq!("ios".parse::<Platform>().unwrap().to_string(), "ios");
     assert!("desktop".parse::<Platform>().is_err());
 }
 
 #[test]
 fn test_log_level_parsing() {
-    assert!(matches!("debug".parse::<LogLevel>().unwrap(), LogLevel::Debug));
-    assert!(matches!("info".parse::<LogLevel>().unwrap(), LogLevel::Info));
-    assert!(matches!("warn".parse::<LogLevel>().unwrap(), LogLevel::Warn));
-    assert!(matches!("warning".parse::<LogLevel>().unwrap(), LogLevel::Warn));
-    assert!(matches!("error".parse::<LogLevel>().unwrap(), LogLevel::Error));
-    assert!(matches!("fatal".parse::<LogLevel>().unwrap(), LogLevel::Fatal));
+    assert!(matches!(
+        "debug".parse::<LogLevel>().unwrap(),
+        LogLevel::Debug
+    ));
+    assert!(matches!(
+        "info".parse::<LogLevel>().unwrap(),
+        LogLevel::Info
+    ));
+    assert!(matches!(
+        "warn".parse::<LogLevel>().unwrap(),
+        LogLevel::Warn
+    ));
+    assert!(matches!(
+        "warning".parse::<LogLevel>().unwrap(),
+        LogLevel::Warn
+    ));
+    assert!(matches!(
+        "error".parse::<LogLevel>().unwrap(),
+        LogLevel::Error
+    ));
+    assert!(matches!(
+        "fatal".parse::<LogLevel>().unwrap(),
+        LogLevel::Fatal
+    ));
     assert!("verbose".parse::<LogLevel>().is_err());
 }
 
 #[test]
 fn test_issue_level_parsing() {
-    assert!(matches!("info".parse::<IssueLevel>().unwrap(), IssueLevel::Info));
-    assert!(matches!("warning".parse::<IssueLevel>().unwrap(), IssueLevel::Warning));
-    assert!(matches!("warn".parse::<IssueLevel>().unwrap(), IssueLevel::Warning));
-    assert!(matches!("error".parse::<IssueLevel>().unwrap(), IssueLevel::Error));
-    assert!(matches!("fatal".parse::<IssueLevel>().unwrap(), IssueLevel::Fatal));
+    assert!(matches!(
+        "info".parse::<IssueLevel>().unwrap(),
+        IssueLevel::Info
+    ));
+    assert!(matches!(
+        "warning".parse::<IssueLevel>().unwrap(),
+        IssueLevel::Warning
+    ));
+    assert!(matches!(
+        "warn".parse::<IssueLevel>().unwrap(),
+        IssueLevel::Warning
+    ));
+    assert!(matches!(
+        "error".parse::<IssueLevel>().unwrap(),
+        IssueLevel::Error
+    ));
+    assert!(matches!(
+        "fatal".parse::<IssueLevel>().unwrap(),
+        IssueLevel::Fatal
+    ));
     assert!("emergency".parse::<IssueLevel>().is_err());
 }
 
@@ -89,7 +125,7 @@ fn test_ingest_batch_serialization_camel_case() {
     };
 
     let json_val = serde_json::to_value(&batch).expect("Failed to serialize batch");
-    
+
     // Verify camelCase field names match Usermon Convex ingest schema
     assert!(json_val.get("sessions").is_some());
     let session = &json_val["sessions"][0];
